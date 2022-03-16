@@ -113,10 +113,10 @@ typedef struct map
     terrain_t mp[yN][xN];
     info_t *npc_mp[yN][xN];
     info_t **trainerList;
+    pair_t map_pos;
 
     // coordinate of doors, eg: up = {x, y}, down = {x, y}, ...
     int up[2], down[2], left[2], right[2];
-    // int x, y;
 } map_t;
 
 typedef struct pc
@@ -128,11 +128,10 @@ typedef struct pc
 typedef struct world
 {
     map_t *world[map_size][map_size];
-    // info_t *trainer_world[map_size][map_size];
+    map_t *currMap;
     int hiker_dist[yN][xN];
     int rival_dist[yN][xN];
     info_t pc;
-    // pc_t pc;
 } world_t;
 
 world_t Bworld;
@@ -425,6 +424,41 @@ dir_t findNeighbourWeighted(map_t *m, info_t *info)
     return (dir_t)dir;
 }
 
+char trainerCheck(map_t *m, int x, int y)
+{
+    char c = '\0';
+    if (m->npc_mp[y][x] != NULL)
+    {
+        switch (m->npc_mp[y][x]->trainer)
+        {
+        case player:
+            c = '@';
+            break;
+        case rival:
+            c = 'r';
+            break;
+        case hiker:
+            c = 'h';
+            break;
+        case pacer:
+            c = 'p';
+            break;
+        case wanderer:
+            c = 'w';
+            break;
+        case stationarie:
+            c = 's';
+            break;
+        case random_walker:
+            c = 'n';
+            break;
+        default:
+            break;
+        }
+    }
+    return c;
+}
+
 int checkValidMove(map_t *m, info_t *info, dir_t dir)
 {
     // int x[] = {0, 0, -1, 1, -1, 1, -1, 1};
@@ -485,139 +519,6 @@ void shiftTrainer(map_t *m, info_t *info, dir_t dir, int counter)
     }
     else
     {
-        info->currCost += findTileCost(m->mp[info->pos[dim_y]][info->pos[dim_x]], info->trainer);
-    }
-}
-
-// randomly move player
-void randMove(map_t *m)
-{
-    dir_t dir;
-    // int x[] = {0, 0, -1, 1, -1, 1, -1, 1};
-    // int y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
-
-    do
-    {
-        dir = (dir_t)(rand() % num_dir);
-    } while (m->npc_mp[Bworld.pc.pos[dim_y] + all_dirs[dir][dim_y]][Bworld.pc.pos[dim_x] + all_dirs[dir][dim_x]] != NULL);
-
-    terrain_t ter = m->mp[Bworld.pc.pos[dim_y] + all_dirs[dir][dim_y]][Bworld.pc.pos[dim_x] + all_dirs[dir][dim_x]];
-    if (findTileCost(ter, player) != INT_MAX)
-    {
-        Bworld.pc.pos[dim_x] += all_dirs[dir][dim_x];
-        Bworld.pc.pos[dim_y] += all_dirs[dir][dim_y];
-        Bworld.pc.currCost += (findTileCost(ter, player));
-    }
-}
-
-// move player
-void playerMove(map_t *m, dir_t dir)
-{
-    // int x[] = {0, 0, -1, 1, -1, 1, -1, 1};
-    // int y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
-
-    // if player meet door, do move map similar to main
-
-    // if ()
-
-    terrain_t ter = m->mp[Bworld.pc.pos[dim_y] + all_dirs[dir][dim_y]][Bworld.pc.pos[dim_x] + all_dirs[dir][dim_x]];
-    if (findTileCost(ter, player) != INT_MAX)
-    {
-        Bworld.pc.pos[dim_x] += all_dirs[dir][dim_x];
-        Bworld.pc.pos[dim_y] += all_dirs[dir][dim_y];
-        Bworld.pc.currCost += (findTileCost(ter, player));
-    }
-}
-
-void move_Hiker_Rival(map_t *m, info_t *info, int counter)
-{
-    shiftTrainer(m, info, findNeighbourWeighted(m, info), counter);
-}
-
-void move_RandomWalker_Pacer(map_t *m, info_t *info, int counter)
-{
-    int temp = 0;
-    if (info->prev == no_dir)
-    {
-        while (temp < 100)
-        {
-            dir_t dir = (dir_t)(rand() % 4);
-            if (checkValidMove(m, info, dir) == 0)
-            {
-                info->prev = dir;
-                shiftTrainer(m, info, dir, counter);
-                return;
-            }
-            temp++;
-        }
-    }
-    else if (info->prev != no_dir && checkValidMove(m, info, info->prev) == 0)
-        shiftTrainer(m, info, info->prev, counter);
-    else if (info->prev < 4) // can only have n, s, w, e
-    {
-        // flip 180
-        if (info->prev % 2 == 0)
-        {
-            info->prev = info->prev + 1;
-        }
-        else
-        {
-            info->prev = info->prev - 1;
-        }
-        if (checkValidMove(m, info, info->prev) == 0)
-            shiftTrainer(m, info, (dir_t)(info->prev), counter);
-        else
-            info->currCost += findTileCost(m->mp[info->pos[dim_y]][info->pos[dim_x]], info->trainer);
-    }
-}
-
-void moveWanderer(map_t *m, info_t *info, int counter)
-{
-    int temp = 0;
-    if (info->prev == no_dir)
-    {
-        while (temp < 100)
-        {
-            dir_t dir = (dir_t)(rand() % 4);
-            if (checkValidMove(m, info, dir) == 0)
-            {
-                info->prev = dir;
-                shiftTrainer(m, info, dir, counter);
-                return;
-            }
-            temp++;
-        }
-    }
-    else if (info->prev != no_dir && checkValidMove(m, info, info->prev) == 0)
-        shiftTrainer(m, info, info->prev, counter);
-    else if (info->prev < 4) // can only have n, s, w, e
-    {
-        do
-        {
-            switch (info->prev)
-            {
-            case n:
-                info->prev = e;
-                break;
-            case e:
-                info->prev = s;
-                break;
-            case s:
-                info->prev = w;
-                break;
-            case w:
-                info->prev = n;
-                break;
-            default:
-                break;
-            }
-            if (checkValidMove(m, info, info->prev) == 0)
-            {
-                shiftTrainer(m, info, info->prev, counter);
-                return;
-            }
-            temp++;
-        } while (temp < 100);
         info->currCost += findTileCost(m->mp[info->pos[dim_y]][info->pos[dim_x]], info->trainer);
     }
 }
@@ -715,10 +616,12 @@ void bPath(terrain_t map[yN][xN], map_t *m)
     map[y][x] = path;
 
     // setting pc pos
-    Bworld.pc.pos[dim_x] = x;
-    Bworld.pc.pos[dim_y] = y;
-    Bworld.pc.currCost = (findTileCost(m->mp[y][x], player));
-    // FIRST TO ADD TO QUEUE
+    if (Bworld.pc.currCost == 0)
+    {
+        Bworld.pc.pos[dim_x] = x;
+        Bworld.pc.pos[dim_y] = y;
+        Bworld.pc.currCost = (findTileCost(m->mp[y][x], player));
+    }
 
     // connect left
     connect(map, m->left[dim_x], m->left[dim_y], x, y);
@@ -1000,39 +903,394 @@ void generation(terrain_t map[yN][xN], map_t *m, int dis)
     }
 }
 
-char trainerCheck(map_t *m, int x, int y)
+map_t *map_init(map_t *m, int x, int y)
 {
-    char c = '\0';
-    if (m->npc_mp[y][x] != NULL)
+    int up, down, left, right, dis;
+    up = -1, down = -1, left = -1, right = -1;
+
+    m = malloc(sizeof(*m));
+
+    m->map_pos[dim_x] = x;
+    m->map_pos[dim_y] = y;
+
+    if (y - 1 > 0 && Bworld.world[y - 1][x] != NULL)
+        up = Bworld.world[y - 1][x]->down[0];
+    if (y + 1 < map_size && Bworld.world[y + 1][x] != NULL)
+        down = Bworld.world[y + 1][x]->up[0];
+    if (x - 1 > 0 && Bworld.world[y][x - 1] != NULL)
+        left = Bworld.world[y][x - 1]->right[1];
+    if (x + 1 < map_size && Bworld.world[y][x + 1] != NULL)
+        right = Bworld.world[y][x + 1]->left[1];
+
+    if (y == 0)
+        up = -2;
+    if (y == map_size - 1)
+        down = -2;
+    if (x == 0)
+        left = -2;
+    if (x == map_size - 1)
+        right = -2;
+
+    dis = abs(x - center_x) + abs(y - center_y);
+
+    for (int j = 0; j < yN; j++)
     {
-        switch (m->npc_mp[y][x]->trainer)
+        for (int i = 0; i < xN; i++)
+        {
+            m->npc_mp[j][i] = NULL;
+        }
+    }
+
+    if (up == -1)
+        m->up[0] = rand() % (xN - 6) + 3;
+    else
+        m->up[0] = up;
+    m->up[1] = 0;
+
+    if (down == -1)
+        m->down[0] = rand() % (xN - 6) + 3;
+    else
+        m->down[0] = down;
+    m->down[1] = yN - 1;
+
+    m->left[0] = 0;
+    if (left == -1)
+        m->left[1] = rand() % (yN - 6) + 3;
+    else
+        m->left[1] = left;
+
+    m->right[0] = xN - 1;
+    if (right == -1)
+        m->right[1] = rand() % (yN - 6) + 3;
+    else
+        m->right[1] = right;
+
+    generation(m->mp, m, dis);
+    return m;
+}
+
+void trainer_init(map_t *m, int numTrainer)
+{
+    int x = 0, y = 0
+        // , i, j
+        ;
+
+    // info_t *info = malloc(sizeof(info_t));_t
+    m->trainerList = (info_t **)malloc(numTrainer * sizeof(info_t));
+
+    do
+    {
+        trainer_t npc = (trainer_t)(rand() % (num_trainer_type - 2)) + 2;
+
+        do
+        {
+            x = rand() % xN;
+            y = rand() % yN;
+        } while (y >= map_size - 1 || x >= map_size - 1 ||
+                 y <= 1 || x <= 1 || (Bworld.pc.pos[dim_x] == x && Bworld.pc.pos[dim_y] == y) || (findTileCost(m->mp[y][x], npc) == INT_MAX) || m->mp[y][x] == snow_mount || m->mp[y][x] == path);
+
+        if (numTrainer) // if numTrainer = 0, skip
+        {
+            m->npc_mp[y][x] = malloc(sizeof(info_t));
+            info_t *temp = m->npc_mp[y][x];
+
+            // info_t *temp = malloc(sizeof(*temp));
+
+            if (numTrainer > 2)
+            {
+                temp->trainer = (trainer_t)(rand() % (num_trainer_type - 2)) + 2;
+                // temp->trainer = random_walker;
+            }
+            if (numTrainer == 2)
+            {
+                temp->trainer = hiker;
+                // temp->trainer = random_walker;
+            }
+            if (numTrainer == 1)
+            {
+                temp->trainer = rival;
+                // temp->trainer = random_walker;
+            }
+            temp->currCost = (findTileCost(m->mp[y][x], npc));
+            temp->pos[dim_x] = x;
+            temp->pos[dim_y] = y;
+            temp->prev = no_dir;
+            --numTrainer;
+            temp->placement = numTrainer;
+
+            // m->npc_mp[y][x] = temp;
+            m->trainerList[numTrainer] = m->npc_mp[y][x];
+
+            // WHEN WE ADD A TRAINER TO LIST, ADD TO QUEUE
+        }
+    } while (numTrainer != 0);
+}
+
+// randomly move player
+void randMove(map_t *m)
+{
+    dir_t dir;
+    // int x[] = {0, 0, -1, 1, -1, 1, -1, 1};
+    // int y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
+
+    do
+    {
+        dir = (dir_t)(rand() % num_dir);
+    } while (m->npc_mp[Bworld.pc.pos[dim_y] + all_dirs[dir][dim_y]][Bworld.pc.pos[dim_x] + all_dirs[dir][dim_x]] != NULL);
+
+    terrain_t ter = m->mp[Bworld.pc.pos[dim_y] + all_dirs[dir][dim_y]][Bworld.pc.pos[dim_x] + all_dirs[dir][dim_x]];
+    if (findTileCost(ter, player) != INT_MAX)
+    {
+        Bworld.pc.pos[dim_x] += all_dirs[dir][dim_x];
+        Bworld.pc.pos[dim_y] += all_dirs[dir][dim_y];
+        Bworld.pc.currCost += (findTileCost(ter, player));
+    }
+}
+
+// move player
+void playerMove(map_t *m, dir_t dir)
+{
+    dir_t world_dir;
+    map_t *temp_world;
+
+    if (dir == no_dir)
+    {
+        Bworld.pc.currCost += (findTileCost(m->mp[Bworld.pc.pos[dim_y]][Bworld.pc.pos[dim_x]], player));
+        return;
+    }
+
+    // if player meet door, do move map similar to main
+    int pos_x = Bworld.pc.pos[dim_x];
+    int pos_y = Bworld.pc.pos[dim_y];
+    int new_pos_x = pos_x + all_dirs[dir][dim_x];
+    int new_pos_y = pos_y + all_dirs[dir][dim_y];
+
+    if (m->mp[new_pos_y][new_pos_y] == door)
+    {
+        if (m->up[dim_x] == new_pos_x && m->up[dim_y] == new_pos_y)
+            world_dir = n;
+        if (m->down[dim_x] == new_pos_x && m->down[dim_y] == new_pos_y)
+            world_dir = s;
+        if (m->left[dim_x] == new_pos_x && m->left[dim_y] == new_pos_y)
+            world_dir = w;
+        if (m->right[dim_x] == new_pos_x && m->right[dim_y] == new_pos_y)
+            world_dir = e;
+
+        temp_world = Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]];
+        if (temp_world == NULL)
+        {
+            temp_world = map_init(temp_world, m->map_pos[dim_x] + all_dirs[dir][dim_x], m->map_pos[dim_y] + all_dirs[dir][dim_y]);
+        }
+        Bworld.currMap = temp_world;
+    }
+    else
+    {
+        terrain_t ter = m->mp[Bworld.pc.pos[dim_y] + all_dirs[dir][dim_y]][Bworld.pc.pos[dim_x] + all_dirs[dir][dim_x]];
+        if (findTileCost(ter, player) != INT_MAX)
+        {
+            Bworld.pc.pos[dim_x] += all_dirs[dir][dim_x];
+            Bworld.pc.pos[dim_y] += all_dirs[dir][dim_y];
+            Bworld.pc.currCost += (findTileCost(ter, player));
+        }
+    }
+}
+
+void move_Hiker_Rival(map_t *m, info_t *info, int counter)
+{
+    shiftTrainer(m, info, findNeighbourWeighted(m, info), counter);
+}
+
+void move_RandomWalker_Pacer(map_t *m, info_t *info, int counter)
+{
+    int temp = 0;
+    if (info->prev == no_dir)
+    {
+        while (temp < 100)
+        {
+            dir_t dir = (dir_t)(rand() % 4);
+            if (checkValidMove(m, info, dir) == 0)
+            {
+                info->prev = dir;
+                shiftTrainer(m, info, dir, counter);
+                return;
+            }
+            temp++;
+        }
+    }
+    else if (info->prev != no_dir && checkValidMove(m, info, info->prev) == 0)
+        shiftTrainer(m, info, info->prev, counter);
+    else if (info->prev < 4) // can only have n, s, w, e
+    {
+        // flip 180
+        if (info->prev % 2 == 0)
+        {
+            info->prev = info->prev + 1;
+        }
+        else
+        {
+            info->prev = info->prev - 1;
+        }
+        if (checkValidMove(m, info, info->prev) == 0)
+            shiftTrainer(m, info, (dir_t)(info->prev), counter);
+        else
+            info->currCost += findTileCost(m->mp[info->pos[dim_y]][info->pos[dim_x]], info->trainer);
+    }
+}
+
+void moveWanderer(map_t *m, info_t *info, int counter)
+{
+    int temp = 0;
+    if (info->prev == no_dir)
+    {
+        while (temp < 100)
+        {
+            dir_t dir = (dir_t)(rand() % 4);
+            if (checkValidMove(m, info, dir) == 0)
+            {
+                info->prev = dir;
+                shiftTrainer(m, info, dir, counter);
+                return;
+            }
+            temp++;
+        }
+    }
+    else if (info->prev != no_dir && checkValidMove(m, info, info->prev) == 0)
+        shiftTrainer(m, info, info->prev, counter);
+    else if (info->prev < 4) // can only have n, s, w, e
+    {
+        do
+        {
+            switch (info->prev)
+            {
+            case n:
+                info->prev = e;
+                break;
+            case e:
+                info->prev = s;
+                break;
+            case s:
+                info->prev = w;
+                break;
+            case w:
+                info->prev = n;
+                break;
+            default:
+                break;
+            }
+            if (checkValidMove(m, info, info->prev) == 0)
+            {
+                shiftTrainer(m, info, info->prev, counter);
+                return;
+            }
+            temp++;
+        } while (temp < 100);
+        info->currCost += findTileCost(m->mp[info->pos[dim_y]][info->pos[dim_x]], info->trainer);
+    }
+}
+
+void cycle(map_t *m)
+{
+    info_t *z, *temp;
+    heap_t h;
+    int i = 0;
+    char c;
+    dir_t dir;
+
+    heap_init(&h, info_cmp, NULL);
+
+    temp = &Bworld.pc;
+    temp->hn = heap_insert(&h, &Bworld.pc);
+    while (i < numTrainer)
+    {
+        temp = m->trainerList[i];
+        if (temp->trainer != stationarie)
+            temp->hn = heap_insert(&h, temp);
+        i++;
+    }
+
+    // info_t *temp1 = heap_peek_min(&h);
+    while ((z = heap_remove_min(&h)))
+    {
+        if (check == 'q')
+            return;
+        switch (z->trainer)
         {
         case player:
-            c = '@';
+            printf("Player's Move: ");
+            scanf("%c", &c);
+            switch (c)
+            {
+            case 7:
+            case 'y':
+                dir = nw;
+                break;
+            case 8:
+            case 'k':
+                dir = n;
+                break;
+            case 9:
+            case 'u':
+                dir = ne;
+                break;
+            case 6:
+            case 'l':
+                dir = e;
+                break;
+            case 3:
+            case 'n':
+                dir = se;
+                break;
+            case 2:
+            case 'j':
+                dir = s;
+                break;
+            case 1:
+            case 'b':
+                dir = sw;
+                break;
+            case 4:
+            case 'h':
+                dir = w;
+                break;
+            case '>':
+                // enter building
+                break;
+            case '<':
+                // exit building
+                break;
+            case 5:
+            case ' ':
+                dir = no_dir;
+                break;
+            case 'q':
+            case 'Q':
+                check = 'q';
+                continue;
+            }
+            playerMove(m, dir);
+
+            if (dir != '\n')
+                while ((getchar()) != '\n')
+                    ;
+            // randMove(m);
+            return;
             break;
         case rival:
-            c = 'r';
-            break;
         case hiker:
-            c = 'h';
-            break;
-        case pacer:
-            c = 'p';
-            break;
-        case wanderer:
-            c = 'w';
-            break;
-        case stationarie:
-            c = 's';
+            move_Hiker_Rival(m, m->trainerList[z->placement], z->placement);
             break;
         case random_walker:
-            c = 'n';
+        case pacer:
+            move_RandomWalker_Pacer(m, m->trainerList[z->placement], z->placement);
+            break;
+        case wanderer:
+            moveWanderer(m, m->trainerList[z->placement], z->placement);
             break;
         default:
             break;
         }
+        m->trainerList[z->placement]->hn = heap_insert(&h, m->trainerList[z->placement]);
     }
-    return c;
 }
 
 // map printing
@@ -1112,158 +1370,13 @@ void print(map_t *m, int x, int y)
     printf("Current Coords: (%d, %d)\n", x, y);
 }
 
-void cycle(map_t *m)
-{
-    // info_t **info = m->trainerList;
-    info_t *z, *temp;
-    heap_t h;
-    int i = 0;
-
-    heap_init(&h, info_cmp, NULL);
-
-    temp = &Bworld.pc;
-    temp->hn = heap_insert(&h, &Bworld.pc);
-    while (i < numTrainer)
-    {
-        temp = m->trainerList[i];
-        if (temp->trainer != stationarie)
-            temp->hn = heap_insert(&h, temp);
-        i++;
-    }
-
-    // info_t *temp1 = heap_peek_min(&h);
-    while ((z = heap_remove_min(&h)))
-    {
-        if (check == 'q')
-            return;
-        switch (z->trainer)
-        {
-        case player:
-            randMove(m);
-            return;
-            break;
-        case rival:
-        case hiker:
-            move_Hiker_Rival(m, m->trainerList[z->placement], z->placement);
-            break;
-        case random_walker:
-        case pacer:
-            move_RandomWalker_Pacer(m, m->trainerList[z->placement], z->placement);
-            break;
-        case wanderer:
-            moveWanderer(m, m->trainerList[z->placement], z->placement);
-            break;
-        default:
-            break;
-        }
-        m->trainerList[z->placement]->hn = heap_insert(&h, m->trainerList[z->placement]);
-    }
-}
-
-void trainer_init(map_t *m, int numTrainer)
-{
-    int x = 0, y = 0
-        // , i, j
-        ;
-
-    // info_t *info = malloc(sizeof(info_t));_t
-    m->trainerList = (info_t **)malloc(numTrainer * sizeof(info_t));
-
-    do
-    {
-        trainer_t npc = (trainer_t)(rand() % (num_trainer_type - 2)) + 2;
-
-        do
-        {
-            x = rand() % xN;
-            y = rand() % yN;
-        } while (y >= map_size - 1 || x >= map_size - 1 ||
-                 y <= 1 || x <= 1 || (Bworld.pc.pos[dim_x] == x && Bworld.pc.pos[dim_y] == y) || (findTileCost(m->mp[y][x], npc) == INT_MAX) || m->mp[y][x] == snow_mount || m->mp[y][x] == path);
-
-        if (numTrainer) // if numTrainer = 0, skip
-        {
-            m->npc_mp[y][x] = malloc(sizeof(info_t));
-            info_t *temp = m->npc_mp[y][x];
-
-            // info_t *temp = malloc(sizeof(*temp));
-
-            if (numTrainer > 2)
-            {
-                temp->trainer = (trainer_t)(rand() % (num_trainer_type - 2)) + 2;
-                // temp->trainer = random_walker;
-            }
-            if (numTrainer == 2)
-            {
-                temp->trainer = hiker;
-                // temp->trainer = random_walker;
-            }
-            if (numTrainer == 1)
-            {
-                temp->trainer = rival;
-                // temp->trainer = random_walker;
-            }
-            temp->currCost = (findTileCost(m->mp[y][x], npc));
-            temp->pos[dim_x] = x;
-            temp->pos[dim_y] = y;
-            temp->prev = no_dir;
-            --numTrainer;
-            temp->placement = numTrainer;
-
-            // m->npc_mp[y][x] = temp;
-            m->trainerList[numTrainer] = m->npc_mp[y][x];
-
-            // WHEN WE ADD A TRAINER TO LIST, ADD TO QUEUE
-        }
-    } while (numTrainer != 0);
-}
-
-map_t *map_init(int u, int d, int l, int r, int dis)
-{
-    map_t *m = malloc(sizeof(*m));
-
-    for (int j = 0; j < yN; j++)
-    {
-        for (int i = 0; i < xN; i++)
-        {
-            m->npc_mp[j][i] = NULL;
-        }
-    }
-
-    if (u == -1)
-        m->up[0] = rand() % (xN - 6) + 3;
-    else
-        m->up[0] = u;
-    m->up[1] = 0;
-
-    if (d == -1)
-        m->down[0] = rand() % (xN - 6) + 3;
-    else
-        m->down[0] = d;
-    m->down[1] = yN - 1;
-
-    m->left[0] = 0;
-    if (l == -1)
-        m->left[1] = rand() % (yN - 6) + 3;
-    else
-        m->left[1] = l;
-
-    m->right[0] = xN - 1;
-    if (r == -1)
-        m->right[1] = rand() % (yN - 6) + 3;
-    else
-        m->right[1] = r;
-    generation(m->mp, m, dis);
-    return m;
-}
-
 int main(int argc, char const *argv[])
 {
     struct timeval tv;
     uint32_t seed;
-
-    int i, j, up, down, left, right, x, y,
-        dis;
+    int i, j;
     char dir;
+
     if (argc > 2)
     {
         if (strcmp(argv[argc - 2], "--numtrainers") == 0)
@@ -1288,36 +1401,17 @@ int main(int argc, char const *argv[])
     }
 
     i = center_x, j = center_y;
+    Bworld.pc.currCost = 0;
 
     do
     {
         do
         {
             printf("\n");
-            up = -1, down = -1, left = -1, right = -1;
             if (Bworld.world[j][i] == NULL)
             {
-                if (j - 1 > 0 && Bworld.world[j - 1][i] != NULL)
-                    up = Bworld.world[j - 1][i]->down[0];
-                if (j + 1 < map_size && Bworld.world[j + 1][i] != NULL)
-                    down = Bworld.world[j + 1][i]->up[0];
-                if (i - 1 > 0 && Bworld.world[j][i - 1] != NULL)
-                    left = Bworld.world[j][i - 1]->right[1];
-                if (i + 1 < map_size && Bworld.world[j][i + 1] != NULL)
-                    right = Bworld.world[j][i + 1]->left[1];
-
-                if (j == 0)
-                    up = -2;
-                if (j == map_size - 1)
-                    down = -2;
-                if (i == 0)
-                    left = -2;
-                if (i == map_size - 1)
-                    right = -2;
-
-                dis = abs(i - center_x) + abs(j - center_y);
-
-                Bworld.world[j][i] = map_init(up, down, left, right, dis);
+                Bworld.world[j][i] = map_init(Bworld.world[j][i], i, j);
+                Bworld.currMap = Bworld.world[j][i];
                 dijkstra_map(Bworld.world[j][i], hiker);
                 dijkstra_map(Bworld.world[j][i], rival);
                 trainer_init(Bworld.world[j][i], numTrainer);
@@ -1325,12 +1419,12 @@ int main(int argc, char const *argv[])
             else
             {
                 cycle(Bworld.world[j][i]);
+                dijkstra_map(Bworld.world[j][i], hiker);
+                dijkstra_map(Bworld.world[j][i], rival);
             }
-            dijkstra_map(Bworld.world[j][i], hiker);
-            dijkstra_map(Bworld.world[j][i], rival);
 
             printf("Using seed: %u\n", seed);
-            print(Bworld.world[j][i], i - center_x, j - center_y);
+            print(Bworld.currMap, i - center_x, j - center_y);
 
             usleep(250000);
         } while (check != 'q'); // force cycle
@@ -1428,7 +1522,7 @@ int main(int argc, char const *argv[])
 
         // } while (dir != 'n' && dir != 's' && dir != 'e' && dir != 'w' && dir != 'q' && dir != 'f');
 
-        // dir = 'q';
+        dir = 'q';
     } while (dir != 'q');
 
     return 0;
