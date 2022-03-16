@@ -1,0 +1,1 @@
+//dis = ceil(sqrt(pow(abs((float)i - 199), 2) + pow(abs((float)j - 199), 2)));
