@@ -1466,11 +1466,9 @@ int main(int argc, char const *argv[])
                 dijkstra_map(Bworld.currMap, rival);
             }
 
-            if (check != 'q')
-            {
-                printf("Using seed: %u\n", seed);
-                print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
-            }
+            printf("Using seed: %u\n", seed);
+            print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
+            
             i = Bworld.currMap->map_pos[dim_x], j = Bworld.currMap->map_pos[dim_y];
             usleep(250000);
         } while (check != 'q'); // force cycle
