@@ -116,7 +116,7 @@ typedef struct map
     pair_t map_pos;
 
     // coordinate of doors, eg: up = {x, y}, down = {x, y}, ...
-    int up[2], down[2], left[2], right[2];
+    pair_t up, down, left, right;
 } map_t;
 
 typedef struct pc
@@ -1052,6 +1052,7 @@ void playerMove(map_t *m, dir_t dir)
 {
     dir_t world_dir;
     map_t *temp_world;
+    pair_t door_pos;
 
     if (dir == no_dir)
     {
@@ -1065,7 +1066,7 @@ void playerMove(map_t *m, dir_t dir)
     int new_pos_x = pos_x + all_dirs[dir][dim_x];
     int new_pos_y = pos_y + all_dirs[dir][dim_y];
 
-    if (m->mp[new_pos_y][new_pos_y] == door)
+    if (m->mp[new_pos_y][new_pos_x] == door)
     {
         if (m->up[dim_x] == new_pos_x && m->up[dim_y] == new_pos_y)
             world_dir = n;
@@ -1079,9 +1080,42 @@ void playerMove(map_t *m, dir_t dir)
         temp_world = Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]];
         if (temp_world == NULL)
         {
-            temp_world = map_init(temp_world, m->map_pos[dim_x] + all_dirs[dir][dim_x], m->map_pos[dim_y] + all_dirs[dir][dim_y]);
+            Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]] = map_init(Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]], m->map_pos[dim_x] + all_dirs[dir][dim_x], m->map_pos[dim_y] + all_dirs[dir][dim_y]);
+            temp_world = Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]];
+            trainer_init(Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]], numTrainer);
         }
         Bworld.currMap = temp_world;
+
+        switch (world_dir)
+        {
+        case n:
+            door_pos[dim_x] = Bworld.currMap->down[dim_x];
+            door_pos[dim_y] = Bworld.currMap->down[dim_y];
+            break;
+        case s:
+            door_pos[dim_x] = Bworld.currMap->up[dim_x];
+            door_pos[dim_y] = Bworld.currMap->up[dim_y];
+            break;
+        case w:
+            door_pos[dim_x] = Bworld.currMap->right[dim_x];
+            door_pos[dim_y] = Bworld.currMap->right[dim_y];
+            break;
+        case e:
+            door_pos[dim_x] = Bworld.currMap->left[dim_x];
+            door_pos[dim_y] = Bworld.currMap->left[dim_y];
+            break;
+        default:
+            break;
+        }
+        if (door_pos[dim_x] == 0)
+            Bworld.pc.pos[dim_x] = door_pos[dim_x] + 1;
+        if (door_pos[dim_x] == xN - 1)
+            Bworld.pc.pos[dim_x] = door_pos[dim_x] - 1;
+
+        if (door_pos[dim_y] == 0)
+            Bworld.pc.pos[dim_y] = door_pos[dim_y] + 1;
+        if (door_pos[dim_y] == yN - 1)
+            Bworld.pc.pos[dim_y] = door_pos[dim_y] - 1;
     }
     else
     {
@@ -1188,13 +1222,14 @@ void moveWanderer(map_t *m, info_t *info, int counter)
     }
 }
 
-void cycle(map_t *m)
+void cycle()
 {
     info_t *z, *temp;
     heap_t h;
     int i = 0;
     char c;
     dir_t dir;
+    map_t *m = Bworld.currMap;
 
     heap_init(&h, info_cmp, NULL);
 
@@ -1265,11 +1300,19 @@ void cycle(map_t *m)
             case 'q':
             case 'Q':
                 check = 'q';
+                return;
+
+            case '?':
+                printf("7 or y: Attempt to move PC one cell to the upper left. \t8 or k: Attempt to move PC one cell up.\n9 or u: Attempt to move PC one cell to the upper right.\t6 or l: Attempt to move PC one cell to the right.\n3 or n: Attempt to move PC one cell to the lower right.\t2 or j: Attempt to move PC one cell down.\n1 or b: Attempt to move PC one cell to the lower left.\t4 or h: Attempt to move PC one cell to the left\n");
+                m->trainerList[z->placement]->hn = heap_insert(&h, &Bworld.pc);
+                if (c != '\n')
+                    while ((getchar()) != '\n')
+                        ;
                 continue;
             }
             playerMove(m, dir);
 
-            if (dir != '\n')
+            if (c != '\n')
                 while ((getchar()) != '\n')
                     ;
             // randMove(m);
@@ -1418,14 +1461,17 @@ int main(int argc, char const *argv[])
             }
             else
             {
-                cycle(Bworld.world[j][i]);
-                dijkstra_map(Bworld.world[j][i], hiker);
-                dijkstra_map(Bworld.world[j][i], rival);
+                cycle(Bworld.currMap);
+                dijkstra_map(Bworld.currMap, hiker);
+                dijkstra_map(Bworld.currMap, rival);
             }
 
-            printf("Using seed: %u\n", seed);
-            print(Bworld.currMap, i - center_x, j - center_y);
-
+            if (check != 'q')
+            {
+                printf("Using seed: %u\n", seed);
+                print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
+            }
+            i = Bworld.currMap->map_pos[dim_x], j = Bworld.currMap->map_pos[dim_y];
             usleep(250000);
         } while (check != 'q'); // force cycle
 

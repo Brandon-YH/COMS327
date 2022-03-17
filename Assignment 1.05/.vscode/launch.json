@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
-            "args": ["--seed", "2977475713" ],
+            "args": ["--seed", "1283361235" ],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
             "environment": [],
