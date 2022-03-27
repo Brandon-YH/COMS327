@@ -16,9 +16,9 @@
 #define heightpair(pair) (m->height[pair[dim_y]][pair[dim_x]])
 #define heightxy(x, y) (m->height[y][x])
 
-#define map_size 399
-#define center_x 199
-#define center_y 199
+#define map_size 401
+#define center_x 401/ 2
+#define center_y 401/ 2
 #define xN 80
 #define yN 21
 
@@ -99,8 +99,7 @@ static const char *ter_name[] = {
     "Path",
 
     "Center",
-    "Mart"
-};
+    "Mart"};
 
 typedef enum trainer
 {
@@ -165,9 +164,9 @@ typedef struct map
     terrain_t mp[yN][xN];
     info_t *npc_mp[yN][xN];
     info_t **trainerList;
-    pair_t map_pos;
     int pc_currCost;
 
+    heap_t turn;    
     // coordinate of doors, eg: up = {x, y}, down = {x, y}, ...
     pair_t up, down, left, right;
 } map_t;
@@ -176,6 +175,7 @@ typedef struct world
 {
     map_t *world[map_size][map_size];
     map_t *currMap;
+    pair_t cur_idx;
     int hiker_dist[yN][xN];
     int rival_dist[yN][xN];
     info_t pc;
@@ -546,10 +546,11 @@ char trainerCheck(map_t *m, int x, int y)
 }
 
 // map printing
-void print(map_t *m, int x, int y)
+void print_map()
 {
     int i, j;
     char c, t;
+    map_t *m = Bworld.currMap;
 
     customColor();
     mvprintw(0, 0, "Using seed: %u\n", seed);
@@ -658,7 +659,7 @@ void print(map_t *m, int x, int y)
         }
         // printw("\n");
     }
-    mvprintw(22, 0, "Current Coords: (%d, %d)\n", x, y);
+    mvprintw(22, 0, "Current Coords: (%d, %d)\n", Bworld.cur_idx[dim_x] - center_x, Bworld.cur_idx[dim_y] - center_y);
     refresh();
 }
 
@@ -798,7 +799,7 @@ void initiateBattle(info_t *t)
     t->defeated = 1;
     clear();
 
-    print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
+    print_map();
     refresh();
 }
 
@@ -844,6 +845,7 @@ void centerMart_PLACEHOLDER()
     }
     clear();
 }
+
 int checkValidMove(map_t *m, info_t *info, dir_t dir)
 {
     // int x[] = {0, 0, -1, 1, -1, 1, -1, 1};
@@ -872,12 +874,9 @@ int checkValidMove(map_t *m, info_t *info, dir_t dir)
     return -1;
 }
 
-void shiftTrainer(map_t *m, info_t *info, dir_t dir, int counter)
+void shiftTrainer(info_t *info, dir_t dir, int counter)
 {
-    // int x[] = {0, 0, -1, 1, -1, 1, -1, 1};
-    // int y[] = {-1, 1, 0, 0, -1, -1, 1, 1};
-    // int *dist_map;
-    // terrain_t ter = m->mp[info->pos[dim_y] + y[dir]][info->pos[dim_x] + x[dir]];
+    map_t *m = Bworld.currMap;
 
     if (m->trainerList[counter]->pos[dim_x] + all_dirs[dir][dim_x] == Bworld.pc.pos[dim_x] && m->trainerList[counter]->pos[dim_y] + all_dirs[dir][dim_y] == Bworld.pc.pos[dim_y])
     {
@@ -896,17 +895,19 @@ void shiftTrainer(map_t *m, info_t *info, dir_t dir, int counter)
         int new_y = info->pos[dim_y] + all_dirs[dir][dim_y];
         m->npc_mp[new_y][new_x] = malloc(sizeof(info_t));
 
-        m->npc_mp[new_y][new_x]->pos[dim_x] = new_x;
-        m->npc_mp[new_y][new_x]->pos[dim_y] = new_y;
-        m->npc_mp[new_y][new_x]->prev = info->prev;
-        m->npc_mp[new_y][new_x]->trainer = info->trainer;
-        m->npc_mp[new_y][new_x]->defeated = info->defeated;
-        m->npc_mp[new_y][new_x]->placement = info->placement;
-        m->npc_mp[new_y][new_x]->currCost = info->currCost + findTileCost(m->mp[new_y][new_x], info->trainer);
+        m->npc_mp[new_y][new_x] = info;
         m->npc_mp[info->pos[dim_y]][info->pos[dim_x]] = NULL;
-        free(m->npc_mp[info->pos[dim_y]][info->pos[dim_x]]);
 
-        m->trainerList[counter] = m->npc_mp[new_y][new_x];
+        info->pos[dim_x] = new_x;
+        info->pos[dim_y] = new_y;
+        // m->npc_mp[new_y][new_x]->prev = info->prev;
+        // m->npc_mp[new_y][new_x]->trainer = info->trainer;
+        // m->npc_mp[new_y][new_x]->defeated = info->defeated;
+        // m->npc_mp[new_y][new_x]->placement = info->placement;
+        info->currCost = info->currCost + findTileCost(m->mp[new_y][new_x], info->trainer);
+        // free(m->npc_mp[info->pos[dim_y]][info->pos[dim_x]]);
+
+        m->trainerList[counter] = info;
     }
     else
     {
@@ -1300,9 +1301,6 @@ map_t *map_init(map_t *m, int x, int y)
     up = -1, down = -1, left = -1, right = -1;
 
     m = malloc(sizeof(*m));
-
-    m->map_pos[dim_x] = x;
-    m->map_pos[dim_y] = y;
     m->pc_currCost = 0;
 
     if (y - 1 > 0 && Bworld.world[y - 1][x] != NULL)
@@ -1358,6 +1356,8 @@ map_t *map_init(map_t *m, int x, int y)
         m->right[1] = right;
 
     generation(m->mp, m, dis);
+    heap_init(&m->turn, info_cmp, NULL);
+    heap_insert(&m->turn, &Bworld.pc);
     return m;
 }
 
@@ -1415,6 +1415,8 @@ void trainer_init(map_t *m, int numTrainer)
             m->trainerList[numTrainer] = m->npc_mp[y][x];
 
             // WHEN WE ADD A TRAINER TO LIST, ADD TO QUEUE
+            if (temp->trainer != stationarie)
+            heap_insert(&m->turn, temp);
         }
     } while (numTrainer != 0);
 }
@@ -1447,6 +1449,8 @@ int playerMove(map_t *m, dir_t dir)
     map_t *temp_world;
     pair_t door_pos;
 
+    if (dir == no_dir)
+        return -1;
     if (dir == skip)
     {
         Bworld.pc.currCost += 15;
@@ -1470,18 +1474,20 @@ int playerMove(map_t *m, dir_t dir)
         if (m->right[dim_x] == new_pos_x && m->right[dim_y] == new_pos_y)
             world_dir = e;
 
-        temp_world = Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]];
+        temp_world = Bworld.world[Bworld.cur_idx[dim_y] + all_dirs[world_dir][dim_y]][Bworld.cur_idx[dim_x] + all_dirs[world_dir][dim_x]];
         if (temp_world == NULL)
         {
-            Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]] = map_init(Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]], m->map_pos[dim_x] + all_dirs[world_dir][dim_x], m->map_pos[dim_y] + all_dirs[world_dir][dim_y]);
-            temp_world = Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]];
-            trainer_init(Bworld.world[m->map_pos[dim_y] + all_dirs[world_dir][dim_y]][m->map_pos[dim_x] + all_dirs[world_dir][dim_x]], numTrainer);
+            Bworld.world[Bworld.cur_idx[dim_y] + all_dirs[world_dir][dim_y]][Bworld.cur_idx[dim_x] + all_dirs[world_dir][dim_x]] = map_init(Bworld.world[Bworld.cur_idx[dim_y] + all_dirs[world_dir][dim_y]][Bworld.cur_idx[dim_x] + all_dirs[world_dir][dim_x]], Bworld.cur_idx[dim_x] + all_dirs[world_dir][dim_x], Bworld.cur_idx[dim_y] + all_dirs[world_dir][dim_y]);
+            temp_world = Bworld.world[Bworld.cur_idx[dim_y] + all_dirs[world_dir][dim_y]][Bworld.cur_idx[dim_x] + all_dirs[world_dir][dim_x]];
+            trainer_init(Bworld.world[Bworld.cur_idx[dim_y] + all_dirs[world_dir][dim_y]][Bworld.cur_idx[dim_x] + all_dirs[world_dir][dim_x]], numTrainer);
             Bworld.currMap->pc_currCost = Bworld.pc.currCost;
         }
         else
             Bworld.pc.currCost = temp_world->pc_currCost;
 
         Bworld.currMap = temp_world;
+        Bworld.cur_idx[dim_x] += all_dirs[world_dir][dim_x];
+        Bworld.cur_idx[dim_y] += all_dirs[world_dir][dim_y];
 
         switch (world_dir)
         {
@@ -1532,7 +1538,7 @@ int playerMove(map_t *m, dir_t dir)
             mvprintw(0, 0, "Defeated this Trainer, please spare their lives. Press any key to continue.");
             refresh();
             getch();
-            mvprintw(0, 0, "Using seed: %u                                                             ", seed);
+            mvprintw(0, 0, "Using seed: %u                                                      ", seed);
             return -1;
         }
     else
@@ -1546,22 +1552,25 @@ int playerMove(map_t *m, dir_t dir)
         }
         else
         {
-            mvprintw(0,0, "Invalid move! %s is in the way.", ter_name[ter]);
+            mvprintw(0, 0, "Invalid move! %s is in the way.", ter_name[ter]);
             refresh();
-            //mvprintw(0,0, "                                                                ", ter_name[ter]);
+            // mvprintw(0,0, "                                                                ", ter_name[ter]);
             return -1;
         }
     }
+    dijkstra_map(Bworld.currMap, hiker);
+    dijkstra_map(Bworld.currMap, rival);
     return 0;
 }
 
-void move_Hiker_Rival(map_t *m, info_t *info, int counter)
+void move_Hiker_Rival(info_t *info, int counter)
 {
-    shiftTrainer(m, info, findNeighbourWeighted(m, info), counter);
+    shiftTrainer(info, findNeighbourWeighted(Bworld.currMap, info), counter);
 }
 
-void move_RandomWalker_Pacer(map_t *m, info_t *info, int counter)
+void move_RandomWalker_Pacer(info_t *info, int counter)
 {
+    map_t *m = Bworld.currMap;
     int temp = 0;
     if (info->prev == no_dir)
     {
@@ -1571,14 +1580,14 @@ void move_RandomWalker_Pacer(map_t *m, info_t *info, int counter)
             if (checkValidMove(m, info, dir) == 0)
             {
                 info->prev = dir;
-                shiftTrainer(m, info, dir, counter);
+                shiftTrainer(info, dir, counter);
                 return;
             }
             temp++;
         }
     }
     else if (info->prev != no_dir && checkValidMove(m, info, info->prev) == 0)
-        shiftTrainer(m, info, info->prev, counter);
+        shiftTrainer(info, info->prev, counter);
     else if (info->prev < 4) // can only have n, s, w, e
     {
         // flip 180
@@ -1591,14 +1600,15 @@ void move_RandomWalker_Pacer(map_t *m, info_t *info, int counter)
             info->prev = info->prev - 1;
         }
         if (checkValidMove(m, info, info->prev) == 0)
-            shiftTrainer(m, info, (dir_t)(info->prev), counter);
+            shiftTrainer(info, (dir_t)(info->prev), counter);
         else
             info->currCost += findTileCost(m->mp[info->pos[dim_y]][info->pos[dim_x]], info->trainer);
     }
 }
 
-void moveWanderer(map_t *m, info_t *info, int counter)
+void moveWanderer(info_t *info, int counter)
 {
+    map_t *m = Bworld.currMap;
     int temp = 0;
     if (info->prev == no_dir)
     {
@@ -1608,14 +1618,14 @@ void moveWanderer(map_t *m, info_t *info, int counter)
             if (checkValidMove(m, info, dir) == 0)
             {
                 info->prev = dir;
-                shiftTrainer(m, info, dir, counter);
+                shiftTrainer(info, dir, counter);
                 return;
             }
             temp++;
         }
     }
     else if (info->prev != no_dir && checkValidMove(m, info, info->prev) == 0)
-        shiftTrainer(m, info, info->prev, counter);
+        shiftTrainer(info, info->prev, counter);
     else if (info->prev < 4) // can only have n, s, w, e
     {
         do
@@ -1639,7 +1649,7 @@ void moveWanderer(map_t *m, info_t *info, int counter)
             }
             if (checkValidMove(m, info, info->prev) == 0)
             {
-                shiftTrainer(m, info, info->prev, counter);
+                shiftTrainer(info, info->prev, counter);
                 return;
             }
             temp++;
@@ -1648,41 +1658,62 @@ void moveWanderer(map_t *m, info_t *info, int counter)
     }
 }
 
+void init_world()
+{
+    int i,j;
+    for (j = 0; j < map_size; j++)
+    {
+        for (i = 0; i < map_size; i++)
+        {
+            Bworld.world[j][i] = NULL;
+        }
+    }
+    Bworld.cur_idx[dim_x] = Bworld.cur_idx[dim_y] = map_size / 2;
+    Bworld.pc.currCost = 0;
+
+    Bworld.world[center_y][center_x] = map_init(Bworld.world[center_y][center_x], Bworld.cur_idx[dim_x], Bworld.cur_idx[dim_y]);
+    Bworld.currMap = Bworld.world[center_y][center_x];
+    dijkstra_map(Bworld.world[center_y][center_x], hiker);
+    dijkstra_map(Bworld.world[center_y][center_x], rival);
+    trainer_init(Bworld.world[center_y][center_x], numTrainer);
+}
+
 void cycle()
 {
-    info_t *z, *temp;
-    heap_t h;
-    int i = 0;
+    info_t *z;
+    //heap_t h;
+    //int i = 0;
     // char c;
     dir_t dir = no_dir;
     int32_t key;
-    map_t *m = Bworld.currMap;
 
-    heap_init(&h, info_cmp, NULL);
+    // heap_init(&h, info_cmp, NULL);
 
-    temp = &Bworld.pc;
-    temp->hn = heap_insert(&h, &Bworld.pc);
-    while (i < numTrainer)
-    {
-        temp = m->trainerList[i];
-        if (temp->trainer != stationarie && temp->defeated == 0)
-            temp->hn = heap_insert(&h, temp);
-        i++;
-    }
+    // temp = &Bworld.pc;
+    // temp->hn = heap_insert(&h, &Bworld.pc);
+    // while (i < numTrainer)
+    // {
+    //     temp = m->trainerList[i];
+    //     if (temp->trainer != stationarie && temp->defeated == 0)
+    //         temp->hn = heap_insert(&h, temp);
+    //     i++;
+    // }
 
     // info_t *temp1 = heap_peek_min(&h);
-    while ((z = heap_remove_min(&h)))
+    while (1)
     {
+        z = heap_remove_min(&Bworld.currMap->turn);
         if (check == 'q')
             return;
         switch (z->trainer)
         {
         case player:
+            print_map();
             do
             {
                 key = getch();
-                //mvprintw(23, 0, "Key pressed was: %d\n", key);
-                // switch (c)
+                // mvprintw(23, 0, "Key pressed was: %d\n", key);
+                //  switch (c)
                 switch (key)
                 {
                 case '7':
@@ -1719,8 +1750,11 @@ void cycle()
                     break;
                 case '>':
                     // enter building
-                    if (m->mp[Bworld.pc.pos[dim_y]][Bworld.pc.pos[dim_x]] == center || m->mp[Bworld.pc.pos[dim_y]][Bworld.pc.pos[dim_x]] == mart)
+                    if (Bworld.currMap->mp[Bworld.pc.pos[dim_y]][Bworld.pc.pos[dim_x]] == center || Bworld.currMap->mp[Bworld.pc.pos[dim_y]][Bworld.pc.pos[dim_x]] == mart){
                         centerMart_PLACEHOLDER();
+                        print_map();
+                        dir = no_dir;
+                    }
                     break;
                 case '5':
                 case ' ':
@@ -1734,44 +1768,60 @@ void cycle()
 
                 case 't':
                     print_trainerList(Bworld.currMap);
-                    print(m, m->map_pos[dim_x] - center_x, m->map_pos[dim_y] - center_y);
-                    Bworld.currMap->trainerList[z->placement]->hn = heap_insert(&h, &Bworld.pc);
+                    print_map();
+                    dir = no_dir;
+                    //heap_insert(&Bworld.currMap->turn, &Bworld.pc);
                     continue;
 
                 case '?':
                     print_MoveList();
-                    print(m, m->map_pos[dim_x] - center_x, m->map_pos[dim_y] - center_y);
-                    Bworld.currMap->trainerList[z->placement]->hn = heap_insert(&h, &Bworld.pc);
+                    print_map();
+                    //heap_insert(&Bworld.currMap->turn, &Bworld.pc);
                     // if (c != '\n')
                     //     while ((getchar()) != '\n')
                     //         ;
                     continue;
 
                 default:
+                    dir = no_dir;
                     continue;
                 }
-            } while (playerMove(m, dir) == -1);
-            return;
+            } while (playerMove(Bworld.currMap, dir) == -1);
+            //return;
             break;
         case rival:
         case hiker:
-            move_Hiker_Rival(m, m->trainerList[z->placement], z->placement);
+            move_Hiker_Rival(z, z->placement);
             break;
         case random_walker:
         case pacer:
-            move_RandomWalker_Pacer(m, m->trainerList[z->placement], z->placement);
+            move_RandomWalker_Pacer(z, z->placement);
             break;
         case wanderer:
-            moveWanderer(m, m->trainerList[z->placement], z->placement);
+            moveWanderer(z, z->placement);
             break;
         default:
             break;
         }
         if (z->defeated == 0 && check != 'q')
-            m->trainerList[z->placement]->hn = heap_insert(&h, m->trainerList[z->placement]);
+            heap_insert(&Bworld.currMap->turn, z);
+
     }
-    //heap_delete(&h);
+    // heap_delete(&h);
 }
+
+// void gameLoop()
+// {
+//     do
+//     {
+//         cycle(Bworld.currMap);
+//         dijkstra_map(Bworld.currMap, hiker);
+//         dijkstra_map(Bworld.currMap, rival);
+
+//         print_map();
+//         usleep(250000);
+//     } while (check != 'q');
+// }
 
 void deleteWorld()
 {
@@ -1787,20 +1837,20 @@ void deleteWorld()
                 {
                     for (i = 0; i < xN; i++)
                     {
-                        if (Bworld.world[y][x]->npc_mp[j][i]!= NULL)
+                        if (Bworld.world[y][x]->npc_mp[j][i] != NULL)
                         {
                             free(Bworld.world[y][x]->npc_mp[j][i]);
-                            //Bworld.world[y][x]->npc_mp[j][i] = NULL;
-                        }                            
+                            // Bworld.world[y][x]->npc_mp[j][i] = NULL;
+                        }
                     }
                 }
                 if (Bworld.world[y][x]->trainerList != NULL)
                 {
                     free(Bworld.world[y][x]->trainerList);
-                    //Bworld.world[y][x]->trainerList = NULL;
+                    // Bworld.world[y][x]->trainerList = NULL;
                 }
                 free(Bworld.world[y][x]);
-                //Bworld.world[y][x] = NULL;
+                // Bworld.world[y][x] = NULL;
             }
         }
     }
@@ -1809,8 +1859,8 @@ void deleteWorld()
 int main(int argc, char const *argv[])
 {
     struct timeval tv;
-    int i, j;
-    char dir;
+    //int i, j;
+    //char dir;
 
     initscr();
     raw();
@@ -1835,43 +1885,11 @@ int main(int argc, char const *argv[])
 
     srand(seed);
 
-    for (j = 0; j < map_size; j++)
-    {
-        for (i = 0; i < map_size; i++)
-        {
-            Bworld.world[j][i] = NULL;
-        }
-    }
+    init_world();
+    print_map();
 
-    i = center_x, j = center_y;
-    Bworld.pc.currCost = 0;
-
-    do
-    {
-        do
-        {
-            // printw("\n");
-            if (Bworld.world[center_y][center_x] == NULL)
-            {
-                Bworld.world[j][i] = map_init(Bworld.world[j][i], i, j);
-                Bworld.currMap = Bworld.world[j][i];
-                dijkstra_map(Bworld.world[j][i], hiker);
-                dijkstra_map(Bworld.world[j][i], rival);
-                trainer_init(Bworld.world[j][i], numTrainer);
-            }
-            else
-            {
-                cycle(Bworld.currMap);
-                dijkstra_map(Bworld.currMap, hiker);
-                dijkstra_map(Bworld.currMap, rival);
-            }
-
-            print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
-
-            // i = Bworld.currMap->map_pos[dim_x], j = Bworld.currMap->map_pos[dim_y];
-            // refresh();
-            usleep(250000);
-        } while (check != 'q'); // force cycle
+    cycle();
+        // force cycle
 
         // do
         // {
@@ -1965,9 +1983,6 @@ int main(int argc, char const *argv[])
         //             ;
 
         // } while (dir != 'n' && dir != 's' && dir != 'e' && dir != 'w' && dir != 'q' && dir != 'f');
-
-        dir = 'q';
-    } while (dir != 'q');
 
     deleteWorld();
     // endScreen();

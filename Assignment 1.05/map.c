@@ -16,9 +16,9 @@
 #define heightpair(pair) (m->height[pair[dim_y]][pair[dim_x]])
 #define heightxy(x, y) (m->height[y][x])
 
-#define map_size 399
-#define center_x 199
-#define center_y 199
+#define map_size 401
+#define center_x map_size / 2
+#define center_y map_size / 2
 #define xN 80
 #define yN 21
 
@@ -99,8 +99,7 @@ static const char *ter_name[] = {
     "Path",
 
     "Center",
-    "Mart"
-};
+    "Mart"};
 
 typedef enum trainer
 {
@@ -165,9 +164,9 @@ typedef struct map
     terrain_t mp[yN][xN];
     info_t *npc_mp[yN][xN];
     info_t **trainerList;
-    pair_t map_pos;
     int pc_currCost;
 
+    heap_t turn;    
     // coordinate of doors, eg: up = {x, y}, down = {x, y}, ...
     pair_t up, down, left, right;
 } map_t;
@@ -176,6 +175,7 @@ typedef struct world
 {
     map_t *world[map_size][map_size];
     map_t *currMap;
+    pair_t cur_idx;
     int hiker_dist[yN][xN];
     int rival_dist[yN][xN];
     info_t pc;
@@ -546,10 +546,11 @@ char trainerCheck(map_t *m, int x, int y)
 }
 
 // map printing
-void print(map_t *m, int x, int y)
+void print_map()
 {
     int i, j;
     char c, t;
+    map_t *m = Bworld.currMap;
 
     customColor();
     mvprintw(0, 0, "Using seed: %u\n", seed);
@@ -658,7 +659,7 @@ void print(map_t *m, int x, int y)
         }
         // printw("\n");
     }
-    mvprintw(22, 0, "Current Coords: (%d, %d)\n", x, y);
+    mvprintw(22, 0, "Current Coords: (%d, %d)\n", Bworld.cur_idx[dim_x] - center_x, Bworld.cur_idx[dim_y] - center_y);
     refresh();
 }
 
@@ -798,7 +799,7 @@ void initiateBattle(info_t *t)
     t->defeated = 1;
     clear();
 
-    print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
+    print_map();
     refresh();
 }
 
@@ -1012,6 +1013,7 @@ void bPath(terrain_t map[yN][xN], map_t *m)
         Bworld.pc.pos[dim_x] = x;
         Bworld.pc.pos[dim_y] = y;
         Bworld.pc.currCost = (findTileCost(m->mp[y][x], player));
+        heap_insert(&Bworld.currMap->turn, Bworld.pc);
     }
 
     // connect left
@@ -1300,9 +1302,6 @@ map_t *map_init(map_t *m, int x, int y)
     up = -1, down = -1, left = -1, right = -1;
 
     m = malloc(sizeof(*m));
-
-    m->map_pos[dim_x] = x;
-    m->map_pos[dim_y] = y;
     m->pc_currCost = 0;
 
     if (y - 1 > 0 && Bworld.world[y - 1][x] != NULL)
@@ -1358,6 +1357,7 @@ map_t *map_init(map_t *m, int x, int y)
         m->right[1] = right;
 
     generation(m->mp, m, dis);
+    heap_init(&m->turn, info_cmp, NULL);
     return m;
 }
 
@@ -1415,6 +1415,7 @@ void trainer_init(map_t *m, int numTrainer)
             m->trainerList[numTrainer] = m->npc_mp[y][x];
 
             // WHEN WE ADD A TRAINER TO LIST, ADD TO QUEUE
+            heap_insert(&Bworld.currMap->turn, temp);
         }
     } while (numTrainer != 0);
 }
@@ -1546,9 +1547,9 @@ int playerMove(map_t *m, dir_t dir)
         }
         else
         {
-            mvprintw(0,0, "Invalid move! %s is in the way.", ter_name[ter]);
+            mvprintw(0, 0, "Invalid move! %s is in the way.", ter_name[ter]);
             refresh();
-            //mvprintw(0,0, "                                                                ", ter_name[ter]);
+            // mvprintw(0,0, "                                                                ", ter_name[ter]);
             return -1;
         }
     }
@@ -1648,6 +1649,25 @@ void moveWanderer(map_t *m, info_t *info, int counter)
     }
 }
 
+void init_world()
+{
+    for (j = 0; j < map_size; j++)
+    {
+        for (i = 0; i < map_size; i++)
+        {
+            Bworld.world[j][i] = NULL;
+        }
+    }
+    world.cur_idx[dim_x] = world.cur_idx[dim_y] = map_size / 2;
+    Bworld.pc.currCost = 0;
+
+    Bworld.world[center_y][center_x] = map_init(Bworld.world[center_y][center_x], i, j);
+    Bworld.currMap = Bworld.world[center_y][center_x];
+    dijkstra_map(Bworld.world[center_y][center_x], hiker);
+    dijkstra_map(Bworld.world[center_y][center_x], rival);
+    trainer_init(Bworld.world[center_y][center_x], numTrainer);
+}
+
 void cycle()
 {
     info_t *z, *temp;
@@ -1658,21 +1678,22 @@ void cycle()
     int32_t key;
     map_t *m = Bworld.currMap;
 
-    heap_init(&h, info_cmp, NULL);
+    // heap_init(&h, info_cmp, NULL);
 
-    temp = &Bworld.pc;
-    temp->hn = heap_insert(&h, &Bworld.pc);
-    while (i < numTrainer)
-    {
-        temp = m->trainerList[i];
-        if (temp->trainer != stationarie && temp->defeated == 0)
-            temp->hn = heap_insert(&h, temp);
-        i++;
-    }
+    // temp = &Bworld.pc;
+    // temp->hn = heap_insert(&h, &Bworld.pc);
+    // while (i < numTrainer)
+    // {
+    //     temp = m->trainerList[i];
+    //     if (temp->trainer != stationarie && temp->defeated == 0)
+    //         temp->hn = heap_insert(&h, temp);
+    //     i++;
+    // }
 
     // info_t *temp1 = heap_peek_min(&h);
-    while ((z = heap_remove_min(&h)))
+    while (1)
     {
+        z = heap_remove_min(&Bworld.currMap->turn);
         if (check == 'q')
             return;
         switch (z->trainer)
@@ -1681,8 +1702,8 @@ void cycle()
             do
             {
                 key = getch();
-                //mvprintw(23, 0, "Key pressed was: %d\n", key);
-                // switch (c)
+                // mvprintw(23, 0, "Key pressed was: %d\n", key);
+                //  switch (c)
                 switch (key)
                 {
                 case '7':
@@ -1734,13 +1755,13 @@ void cycle()
 
                 case 't':
                     print_trainerList(Bworld.currMap);
-                    print(m, m->map_pos[dim_x] - center_x, m->map_pos[dim_y] - center_y);
+                    print_map();
                     Bworld.currMap->trainerList[z->placement]->hn = heap_insert(&h, &Bworld.pc);
                     continue;
 
                 case '?':
                     print_MoveList();
-                    print(m, m->map_pos[dim_x] - center_x, m->map_pos[dim_y] - center_y);
+                    print_map();
                     Bworld.currMap->trainerList[z->placement]->hn = heap_insert(&h, &Bworld.pc);
                     // if (c != '\n')
                     //     while ((getchar()) != '\n')
@@ -1751,7 +1772,7 @@ void cycle()
                     continue;
                 }
             } while (playerMove(m, dir) == -1);
-            return;
+            //return;
             break;
         case rival:
         case hiker:
@@ -1768,9 +1789,22 @@ void cycle()
             break;
         }
         if (z->defeated == 0 && check != 'q')
-            m->trainerList[z->placement]->hn = heap_insert(&h, m->trainerList[z->placement]);
+            m->trainerList[z->placement]->hn = heap_insert(&Bworld.currMap->turn, m->trainerList[z->placement]);
     }
-    //heap_delete(&h);
+    // heap_delete(&h);
+}
+
+void gameLoop()
+{
+    do
+    {
+        cycle(Bworld.currMap);
+        dijkstra_map(Bworld.currMap, hiker);
+        dijkstra_map(Bworld.currMap, rival);
+
+        print_map();
+        usleep(250000);
+    } while (check != 'q');
 }
 
 void deleteWorld()
@@ -1787,20 +1821,20 @@ void deleteWorld()
                 {
                     for (i = 0; i < xN; i++)
                     {
-                        if (Bworld.world[y][x]->npc_mp[j][i]!= NULL)
+                        if (Bworld.world[y][x]->npc_mp[j][i] != NULL)
                         {
                             free(Bworld.world[y][x]->npc_mp[j][i]);
-                            //Bworld.world[y][x]->npc_mp[j][i] = NULL;
-                        }                            
+                            // Bworld.world[y][x]->npc_mp[j][i] = NULL;
+                        }
                     }
                 }
                 if (Bworld.world[y][x]->trainerList != NULL)
                 {
                     free(Bworld.world[y][x]->trainerList);
-                    //Bworld.world[y][x]->trainerList = NULL;
+                    // Bworld.world[y][x]->trainerList = NULL;
                 }
                 free(Bworld.world[y][x]);
-                //Bworld.world[y][x] = NULL;
+                // Bworld.world[y][x] = NULL;
             }
         }
     }
@@ -1835,43 +1869,10 @@ int main(int argc, char const *argv[])
 
     srand(seed);
 
-    for (j = 0; j < map_size; j++)
-    {
-        for (i = 0; i < map_size; i++)
-        {
-            Bworld.world[j][i] = NULL;
-        }
-    }
+    init_world();
 
-    i = center_x, j = center_y;
-    Bworld.pc.currCost = 0;
-
-    do
-    {
-        do
-        {
-            // printw("\n");
-            if (Bworld.world[center_y][center_x] == NULL)
-            {
-                Bworld.world[j][i] = map_init(Bworld.world[j][i], i, j);
-                Bworld.currMap = Bworld.world[j][i];
-                dijkstra_map(Bworld.world[j][i], hiker);
-                dijkstra_map(Bworld.world[j][i], rival);
-                trainer_init(Bworld.world[j][i], numTrainer);
-            }
-            else
-            {
-                cycle(Bworld.currMap);
-                dijkstra_map(Bworld.currMap, hiker);
-                dijkstra_map(Bworld.currMap, rival);
-            }
-
-            print(Bworld.currMap, Bworld.currMap->map_pos[dim_x] - center_x, Bworld.currMap->map_pos[dim_y] - center_y);
-
-            // i = Bworld.currMap->map_pos[dim_x], j = Bworld.currMap->map_pos[dim_y];
-            // refresh();
-            usleep(250000);
-        } while (check != 'q'); // force cycle
+    gameLoop();
+        // force cycle
 
         // do
         // {
@@ -1965,9 +1966,6 @@ int main(int argc, char const *argv[])
         //             ;
 
         // } while (dir != 'n' && dir != 's' && dir != 'e' && dir != 'w' && dir != 'q' && dir != 'f');
-
-        dir = 'q';
-    } while (dir != 'q');
 
     deleteWorld();
     // endScreen();
