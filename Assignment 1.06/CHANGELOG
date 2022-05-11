@@ -1,0 +1,9 @@
+	Mar. 26: Started working on the assignment. Began testing with parsing files.
+
+	Mar. 27: After completing parsing file, I attempt to create classes to store the data.
+
+	Mar. 28: Completed the classes in the test file, began to convert original map.c to map.cpp.
+	
+	Mar. 29: Completed conversion, began importing classes from test file and began testing on reading the console arguments.
+	
+	Mar. 30: Completed reading console argument and importing classes. Completed printing and the assignment.

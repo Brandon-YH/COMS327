@@ -1,0 +1,31 @@
+Author: Yin Hao Choong
+Completion Date: 5/3/2022
+Last Updated: 5/3/2022
+
+This is Project 1.09 - Choose your own Assignment. In this assignment we were given freedom to choose what we could do with suggestions provided by the Dr. Sheaffer. I choose to follow and continue implementation of 1.09 with my own twist.
+
+=======================================================================================
+In this assignment, I've decided to implement most of the suggested features in addition to my own:
+
+1. Implementing PokeBucks (Currency for the game), dropped by defeated trainers.
+
+2. PokeCenter, which heals the team for free. Also a location to access pokemon storage (further discussed below).
+
+3. PokeMart, which allow players to spend money for Pokeballs, Revives and potion. 
+
+4. Selling items. Players are allowed to sell items to the PokeMart for half the original price if they choose to.
+
+5. Pokemon Storage. Like the original, we are able to store pokemon in PokeCenters. Player could deposit pokemon to the storage to store the pokemon and add pokemon back to the team. Currently the limit for the storage is 5000, but it could only display the first 18.
+
+6. Catch Rate. Instead of a raw 100% catch rate from previous assignment, catch rate is now implemented. The lower the health of the pokemon, the higher the catch rate.
+
+7. Experience. After defeating a pokemon, the current selected pokemon will gain experience and potentially level up. Increasing all of the stats of the pokemon.
+=======================================================================================
+This folder will contain no new files, only my previous assignment files.
+
+map.cpp => the source code in c for the map and main file.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02.
+data.cpp => Parsing data from csv files.
+pokemon.cpp => a class for creating pokemons
+items.cpp => class for creating items for the game.
+Makefile => Contains make function that compiles map.c, creating the executable file, and clean, which removes the file.

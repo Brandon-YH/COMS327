@@ -1,0 +1,14 @@
+Author: Yin Hao Choong
+Completion Date: 4/5/2022
+Last Updated: 4/5/2022
+
+This is Project 1.07 - Loading Pokemons. In this assignment implement spawning and generation of Pokemon. We will be parsing pokemon_stats.csv in order to complete the assignment. We are required to follow stat generation formals and print the pokemon stats whenever we encounter the Pokemons (10% chance).
+
+We do not care about biome specified spawns due it its additional complications it adds to the assignment. Level is specified by manhatten distance, and similarly to other stats like HP, Attack, Special Attack and other stats are dependent of level and IV generated during spawnning.
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.cpp, data.cpp, data.h, heap.c, heap.h, classes for each of the .csv files.
+
+map.cpp => the source code in c for the map and main file.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02.
+data.cpp => Parsing data from csv files.
+Makefile => Contains make function that compiles map.c, creating the executable file, and clean, which removes the file.

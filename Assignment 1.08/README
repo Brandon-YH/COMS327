@@ -1,0 +1,16 @@
+Author: Yin Hao Choong
+Completion Date: 4/12/2022
+Last Updated: 4/12/2022
+
+This is Project 1.08 - Pokemon Battles. In this assignment we implement most of the pokemon battle. The only few things that aren't implemented are status effects, buffs, debuffs, types effectiveness. Currently the only way to heal is to use revives and potions. 
+
+All moves have infinite power point (pp) and will be changed during the upcoming assignment.
+=======================================================================================
+This folder will contain a few new files, which include: item.cpp, items.h, pokemon.cpp, pokemon.h and all of my previous files.
+
+map.cpp => the source code in c for the map and main file.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02.
+data.cpp => Parsing data from csv files.
+pokemon.cpp => a class for creating pokemons
+items.cpp => class for creating items for the game.
+Makefile => Contains make function that compiles map.c, creating the executable file, and clean, which removes the file.

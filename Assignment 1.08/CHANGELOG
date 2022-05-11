@@ -1,0 +1,13 @@
+	April. 8: Started working on the assignment. Read the specification of the assignment.
+
+	April. 9: Began testing with Pokemon moves selection and calculation. Buggy.
+
+	April. 10: Began working on wild pokemon encounter + selection.
+	
+	April. 11: More bug fixing and creating more action / selection for the player.
+	
+	April. 12: More bug fixing and most (if not, all) of the known bugs are fixed. UI no longer appear out of place. Finished Player/Trainer battle interraction. 
+	
+	April. 13: Updated move damage calculations to match according to the updated specification. Parsed pokemon_types.csv and fixed escape odds.
+	
+	ASSIGNMENT COMPLETED

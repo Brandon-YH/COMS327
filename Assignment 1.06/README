@@ -1,0 +1,13 @@
+Author: Yin Hao Choong
+Completion Date: 3/30/2022
+Last Updated: 3/30/2022
+
+This is Project 1.06 - CSV Parsing and Porting to C++. In this assignment we focus on converting our code into C++ and parsing data in preparation for implementing Pokemon. In this assignment, we parse pokemon.csv, moves.csv, pokemon_moves.csv, pokemon_species.csv, experience.csv, type_names.csv, by creating a class and storing data into it, then prints as output.
+
+We attempt to load database from three location "/share/cs327", "$HOME/.poke327/" and local file. If we couldn't find any database, related to the name, we just exit the program while printing an error message.
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.cpp, heap.c, heap.h, classes for each of the .csv files.
+
+map.cpp => the source code in c for the map and main file.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02.
+Makefile => Contains make function that compiles map.c, creating the executable file, and clean, which removes the file.
