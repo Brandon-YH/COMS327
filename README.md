@@ -1,5 +1,5 @@
 <h2>This is a in-class project for COM S 327 - Advance Programming Techniques, Spring 2022. </h2>
-
+######
 <h4>
 This project that I had worked on is a simplified version of Pokemon that is playable through the console. The programme should be ran on a linux machine as it uses nCurses as its primary interface API.
 </h4>
@@ -33,7 +33,7 @@ Things that are not implemented from the original game:
 </p>
 
 
-
+######
 <h3>
 How to run programme on a linux machine:
 </h3>
