@@ -27,7 +27,7 @@ Things that are not implemented from the original game:
   - Leveling up moveset (Moves currently cant be learnt during level up).
   - Pokemon do not evolve.
   - Pokemon Move type effectiveness is not calculated.
-  - Items you can get in the game is limited to 3: Pokeball, Revives, Potion.
+  - Majority of items are not in the game, the only 3 I have implemented is: Pokeball, Revives, Potion.
   - No Story or quests lines.
   
 </p>
