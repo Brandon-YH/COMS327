@@ -1,8 +1,8 @@
-<h2>This is a in-class project for COM S 327 - Advance Programming Techniques, Spring 2022. /<h2>
+<h2>This is a in-class project for COM S 327 - Advance Programming Techniques, Spring 2022. </h2>
 
 <h4>
 This project that I had worked on is a simplified version of Pokemon that is playable through the console. The programme should be ran on a linux machine as it uses nCurses as its primary interface API.
-/<h4>
+</h4>
 
   
 <p>
@@ -30,4 +30,4 @@ Things that are not implemented from the original game:
   - Items you can get in the game is limited to 3: Pokeball, Revives, Potion.
   - No Story or quests lines.
   
-/<p>
+</p>
