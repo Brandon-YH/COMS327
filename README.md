@@ -31,3 +31,16 @@ Things that are not implemented from the original game:
   - No Story or quests lines.
   
 </p>
+
+
+
+<h3>
+How to run programme on a linux machine:
+</h3>
+<p>
+  - run the MakeFile using the "make" command.
+  - then execute the executable using "./map"
+  - (optional) You can pass in unique switch cases as command line argument: 
+      - "--seed" : allows the player declare a specified seed.
+      - "--numtrainers" : allows the player to declare a specified amount of trainers that could appear in a map. Set to 8 by default.
+</p>
