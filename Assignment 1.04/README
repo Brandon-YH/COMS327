@@ -1,0 +1,22 @@
+Author: Yin Hao Choong
+Completion Date: 3/4/2022
+Last Updated: 3/4/2022
+
+This is Project 1.04 - Player Character and Trainers. In this assignment we focus on creating the movements of the characters for one map. We have hikers and rival which will path to the player and other character movements. 
+
+Character:
+Rival / Hiker : Paths towards player.
+Pacer         : Moves back and forth bounded by current terrain type.
+Wanderer      : Moves in a square/rectangular shape when possible, (N, E, S, W)
+Stationaries  : Does not move.
+Random Walker : Move back and forth with no bounds except wall.
+
+
+Removed some files to improve readability.
+
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.c, heap.c, heap.h
+
+map.c => the source code in c for the map and main file.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02.
+Makefile => Contains make function that compiles map.c, creating the executable file, and clean, which removes the file.

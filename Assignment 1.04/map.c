@@ -1301,11 +1301,10 @@ int main(int argc, char const *argv[])
             }
             dijkstra_map(Bworld.world[j][i], hiker);
             dijkstra_map(Bworld.world[j][i], rival);
-
+            
             printf("Using seed: %u\n", seed);
             print(Bworld.world[j][i], i - center_x, j - center_y);
-            
-            // usleep(250000);
+            usleep(250000);
         } while (check != 'q'); // force cycle
 
         // do

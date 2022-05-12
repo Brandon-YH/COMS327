@@ -6,6 +6,7 @@
 #define center_x 199
 #define center_y 199
 
+
 map_t *world[size_y][size_x];
 
 int main(int argc, char const *argv[])
@@ -60,7 +61,8 @@ int main(int argc, char const *argv[])
 
         dijkstra_map(world[j][i], hiker);
         dijkstra_map(world[j][i], rival);
-
+        // printWeightedMap(world[j][i]->trainerList[hiker]->path, hiker);
+        // printWeightedMap(world[j][i]->trainerList[rival]->path, rival);
         print(world[j][i], i - center_x, j - center_y);
 
         do
@@ -120,8 +122,7 @@ int main(int argc, char const *argv[])
                         i = x + center_x;
                         j = y + center_y;
                         printf("\nFlying to (%d, %d)...\n", x, y);
-                        while ((getchar()) != '\n')
-                            ;
+                        while ((getchar()) != '\n');
                         break;
                     }
                     else
@@ -151,8 +152,7 @@ int main(int argc, char const *argv[])
                 printf("Invalid direction. Please try again.\n");
             }
             if (dir != '\n')
-                while ((getchar()) != '\n')
-                    ;
+                while ((getchar()) != '\n');
 
         } while (dir != 'n' && dir != 's' && dir != 'e' && dir != 'w' && dir != 'q' && dir != 'f');
     } while (dir != 'q');

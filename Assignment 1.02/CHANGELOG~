@@ -1,0 +1,9 @@
+	Feb. 4: Started working on the assignment. Began testing with Stucts and started working on a header file.
+
+	Feb. 5: Got header file working with map.c and began moving functions to header, still contain minor bugs.
+
+	Feb. 6: Fixed bugs and map.c works completely with struct called map_t.
+
+	Feb. 7: Began working on main.c, completed map movement without error checking.
+
+	Feb. 8: Completed error checking and all 6 functions (n, s, e, w, f, q) and requirements.

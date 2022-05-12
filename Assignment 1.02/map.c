@@ -488,4 +488,3 @@ void print(terrain_t map[yN][xN], int x, int y)
     }
     printf("Current Coords: (%d, %d)\n", x, y);
 }
-//new

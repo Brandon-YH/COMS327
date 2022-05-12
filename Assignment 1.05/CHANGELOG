@@ -1,0 +1,9 @@
+	Mar. 17: Started working on the assignment. Started working with user inputs with scanf.
+
+	Mar. 18: Finished user input functionality with scanf. Began looking into ncurses.
+
+	Mar. 19: Tested with ncurses, began reformatting printf and began transitioning to ncurses.
+	
+	Mar. 20: Main input function completed, all conditions completed. Began working on interactions between player and npc, Pokemart and Pokecenter.
+	
+	Mar. 21: Finished the user interface and all required interaction. Included colors and simple error message that an action cannot be executed by the user.

@@ -1,7 +1,0 @@
-{
-    "files.associations": {
-        "map.h": "c",
-        "time.h": "c",
-        "stdio.h": "c"
-    }
-}

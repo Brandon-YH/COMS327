@@ -1,0 +1,17 @@
+Author: Yin Hao Choong
+Completion Date: 2/1/2022
+Last Updated: 2/1/2022
+
+This is Project 1.01 - Terrain Generation. In this assignment we attempt to randomly generate terrain generation for our game.
+
+Currently the program is able to run and generate completely random maps. 
+I had implemented some RNG to terrain generation, namely lake/ocean, deep forest and snowy mountains will be considered rare biomes. PokeMart and PokeCenter will both be attempted to spawn/generate close to each other for QOL. Implemented simple continue call to cycle to next terrain.
+
+One bug that should be noted is that the continue function only takes in number. Anything else will cause infinite loop. Each generated maps will have empty space which can be filled later on.
+
+
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.c
+
+map.c => the source code in c for the map.
+Makefile => contains map, which compiles and make the executable file, and clean, which removes the file.

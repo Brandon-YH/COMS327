@@ -2,9 +2,32 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
-#include "map.h"
+#define xN 80
+#define yN 21
 
-// min & max helper
+typedef enum terrain_type
+{
+    grass_1,
+    grass_2,
+    grass_3,
+    grass_4,
+
+    tree,
+    snow_mount,
+    water,
+
+    blank,
+    wall,
+    door,
+    path,
+
+    center,
+    mart,
+
+    player
+} terrain_t;
+
+//min & max helper
 int max(int num1, int num2)
 {
     return (num1 > num2) ? num1 : num2;
@@ -14,39 +37,8 @@ int min(int num1, int num2)
     return (num1 > num2) ? num2 : num1;
 }
 
-map_t *map_init(int u, int d, int l, int r)
-{
-    map_t *m = malloc(sizeof(*m));
-    if (u == -1)
-        m->up[0] = rand() % (xN - 6) + 3;
-    else
-        m->up[0] = u;
-    m->up[1] = 0;
-
-    if (d == -1)
-        m->down[0] = rand() % (xN - 6) + 3;
-    else
-        m->down[0] = d;
-    m->down[1] = yN - 1;
-
-    m->left[0] = 0;
-    if (l == -1)
-        m->left[1] = rand() % (yN - 6) + 3;
-    else
-        m->left[1] = l;
-
-    m->right[0] = xN - 1;
-    if (r == -1)
-        m->right[1] = rand() % (yN - 6) + 3;
-    else
-        m->right[1] = r;
-
-    generation(m->mp, m);
-    return m;
-}
-
-// helper for path builder
-//  sx, sy = starting coords, ex, ey = ending coords  18 3 18 1
+//helper for path builder
+// sx, sy = starting coords, ex, ey = ending coords  18 3 18 1
 void connect(terrain_t map[yN][xN], int sx, int sy, int ex, int ey)
 {
     int temp_x, temp_y, curr_x, curr_y, checkP;
@@ -58,23 +50,22 @@ void connect(terrain_t map[yN][xN], int sx, int sy, int ex, int ey)
     int xdir = 1;
     int ydir = 1;
 
-    // catch error
+    //catch error
     if (ex == sx && ey == sy)
         return;
 
-    // setting direction
+    //setting direction
     if (ex < sx)
         xdir = -1;
     if (ey < sy)
         ydir = -1;
 
-    // randomizing meeting point
+    //randomizing meeting point
     if (sx != ex)
         temp_x = sx + (rand() % abs(sx - ex) + 1) * xdir;
     if (sy != ey)
         temp_y = sy + (rand() % abs(sy - ey) + 1) * ydir;
 
-    // while (!(abs(curr_y - temp_y) == 0 && abs(curr_x - temp_x) == 0))
     while ((curr_y != temp_y && temp_y != 0) || (curr_x != temp_x && temp_x != 0))
     {
         if (curr_x == 0 && abs(curr_x - temp_x) > 0)
@@ -101,7 +92,6 @@ void connect(terrain_t map[yN][xN], int sx, int sy, int ex, int ey)
 
     if (checkP != 0)
     {
-        // while (!(abs(curr_y - ey) == 0 && abs(curr_x - ex) == 0))
         while (curr_y != ey || curr_x != ex)
         {
             if (curr_y == 0 || curr_y == yN - 1 || abs(curr_x - ex) == 0 || (curr_y != ey && abs(curr_y - ey) >= abs(curr_x - ex)))
@@ -125,12 +115,21 @@ void connect(terrain_t map[yN][xN], int sx, int sy, int ex, int ey)
     }
 }
 
-// path builder
-void bPath(terrain_t map[yN][xN], map_t *m)
+//path builder
+void bPath(terrain_t map[yN][xN])
 {
-    int x, y;
+    int x, y, top, bottom, left, right;
+    //fill doors
+    top = rand() % (xN - 6) + 3;
+    bottom = rand() % (xN - 6) + 3;
+    left = rand() % (yN - 6) + 3;
+    right = rand() % (yN - 6) + 3;
+    map[0][top] = door;
+    map[yN - 1][bottom] = door;
+    map[left][0] = door;
+    map[right][xN - 1] = door;
 
-    // select center
+    //select center
     do
     {
         y = rand() % (yN / 2) + (yN / 3);
@@ -138,14 +137,14 @@ void bPath(terrain_t map[yN][xN], map_t *m)
     } while (map[y][x] == center || map[y][x] == mart);
     map[y][x] = path;
 
-    // connect left
-    connect(map, m->left[0], m->left[1], x, y);
-    // connect right
-    connect(map, m->right[0], m->right[1], x, y);
-    // connect up
-    connect(map, m->up[0], m->up[1], x, y);
-    // connect down
-    connect(map, m->down[0], m->down[1], x, y);
+    //connect left
+    connect(map, 0, left, x, y);
+    //connect right
+    connect(map, xN - 1, right, x, y);
+    //connect top
+    connect(map, top, 0, x, y);
+    //connect bottom
+    connect(map, bottom, yN - 1, x, y);
 }
 
 void building_paths(terrain_t map[yN][xN], int x, int y)
@@ -219,7 +218,7 @@ void building_paths(terrain_t map[yN][xN], int x, int y)
         connect(map, x, y, x, y + ysml * ydir);
 }
 
-// build PokeMart and PokeCenter
+//build PokeMart and PokeCenter
 void pokeMC(terrain_t map[yN][xN])
 {
     int x1, y1, x2, y2;
@@ -235,7 +234,7 @@ void pokeMC(terrain_t map[yN][xN])
     map[y1 + 1][x1 + 1] = center;
 
     do
-    { // might have to change to complete random
+    { 
         x2 = max(min(abs(x1 + (rand() % 3 - 1) * max((rand() % (xN / 3)), 3)), xN - 2), 0);
         y2 = max(min(abs(y1 + (rand() % 3 - 1) * max((rand() % (yN / 2)), 3)), yN - 2), 0);
     } while (map[y2][x2] != blank || map[y2 + 1][x2] != blank || map[y2][x2 + 1] != blank || map[y2 + 1][x2 + 1] != blank || x1 == x2 || y1 == y2 || x1 + 1 == x2 || y1 + 1 == y2);
@@ -244,12 +243,12 @@ void pokeMC(terrain_t map[yN][xN])
     map[y2][x2 + 1] = mart;
     map[y2 + 1][x2 + 1] = mart;
 
-    // check closest path
+    //check closest path
     building_paths(map, x1, y1);
     building_paths(map, x2, y2);
 }
 
-// growing grass
+//growing grass
 void grow(int x, int y, int t, int size, terrain_t map[yN][xN])
 {
     for (int j = y; j < y + size && j < yN - 1; j++)
@@ -311,12 +310,12 @@ void grow(int x, int y, int t, int size, terrain_t map[yN][xN])
     }
 }
 
-// map generation
-void generation(terrain_t map[yN][xN], map_t *m)
+//map generation
+void generation(terrain_t map[yN][xN])
 {
     int i, j, x, y, attemps;
     srand(time(NULL));
-    // initialize map with blanks
+    //initialize map with blanks
     for (j = 0; j < yN; j++)
     {
         for (i = 0; i < xN; i++)
@@ -325,7 +324,7 @@ void generation(terrain_t map[yN][xN], map_t *m)
         }
     }
 
-    // fill walls
+    //fill walls
     for (i = 0; i < xN; i++)
     {
         map[0][i] = wall;
@@ -337,16 +336,10 @@ void generation(terrain_t map[yN][xN], map_t *m)
         map[j][xN - 1] = wall;
     }
 
-    // fill doors
-    map[m->up[1]][m->up[0]] = door;
-    map[m->down[1]][m->down[0]] = door;
-    map[m->left[1]][m->left[0]] = door;
-    map[m->right[1]][m->right[0]] = door;
+    //build path
+    bPath(map);
 
-    // build path
-    bPath(map, m);
-
-    // fill empty with grass
+    //fill empty with grass
     for (i = 0; i < 4; i++)
     {
         do
@@ -358,26 +351,26 @@ void generation(terrain_t map[yN][xN], map_t *m)
         grow(x, y, i, max((rand() % (yN / 2)) + yN / 3, 3), map);
     }
 
-    // build pokeCenter & pokeMart
+    //build pokeCenter & pokeMart
     pokeMC(map);
 
-    // attempts to fill remaining blanks with randomized terrain type
+    //attempts to fill remaining blanks with randomized terrain type
     attemps = 0;
     while (attemps < 200)
     {
         x = rand() % (xN - 1) + 1;
         y = rand() % (yN - 1) + 1;
-        if (map[y][x] == blank)
+        if (map[y][j] == blank)
         {
             i = rand() % 10;
-            // 10% do nothing
-            // 30% chance for water, tree, snow_mount
+            //10% do nothing
+            //30% chance for water, tree, snow_mount
             if (i > 6)
             {
                 i = 4 + rand() % 3;
             }
             else
-            { // 60% chance for regular grass
+            { //60% chance for regular grass
                 i = rand() % 4;
             }
 
@@ -385,20 +378,9 @@ void generation(terrain_t map[yN][xN], map_t *m)
         }
         attemps++;
     }
-
-    for (j = 0; j < yN; j++)
-    {
-        for (i = 0; i < xN; i++)
-        {
-            if (map[j][i] == blank)
-            {
-                map[j][i] = grass_1;
-            }
-        }
-    }
 }
 
-// map printing
+//map printing
 void print(terrain_t map[yN][xN])
 {
     for (int i = 0; i < yN; i++)
@@ -465,102 +447,19 @@ void print(terrain_t map[yN][xN])
     }
 }
 
-//  int main(int argc, char const *argv[])
-// {
-//     int size_x = 399;
-//     int size_y = 399;
-//     int i, j, up, down, left, right;
-//     char dir;
+int main(int argc, char const *argv[])
+{
+    int check = 0;
 
-//     map_t *world[size_y][size_x];
-//     for (j = 0; j < size_y; j++)
-//     {
-//         for (i = 0; i < size_x; i++)
-//         {
-//             world[j][i] = NULL;
-//         }
-//     }
+    while (check == 0)
+    {
+        terrain_t map[yN][xN];
 
-//     i = 0, j = 0;
+        generation(map);
+        print(map);
+        printf("Continue (Y=0, N=Any Num): ");
+        scanf("%d", &check);
+    }
 
-//     do
-//     {
-//         printf("\n");
-//         up = -1, down = -1, left = -1, right = -1;
-//         if (world[j][i] == NULL)
-//         {
-//             if (world[j - 1][i] != NULL)
-//                 up = world[j - 1][i]->down[0];
-//             if (world[j + 1][i] != NULL)
-//                 down = world[j + 1][i]->up[0];
-//             if (world[j][i - 1] != NULL)
-//                 left = world[j][i - 1]->right[1];
-//             if (world[j][i + 1] != NULL)
-//                 right = world[j][i + 1]->left[1];
-
-//             world[j][i] = map_init(up, down, left, right);
-//         }
-
-//         print(world[j][i]->mp);
-
-//         do
-//         {
-//             printf("Direction (n, s, e, w, q to quit): ");
-//             scanf("%c", &dir);
-
-//             switch (dir)
-//             {
-//             case 'n':
-//                 if (j - 1 >= 0)
-//                     j--;
-//                 else
-//                 {
-//                     printf("At the edge of map, try another direction.\n");
-//                     dir = 'z';
-//                 }
-//                 break;
-
-//             case 's':
-//                 if (j + 1 < size_y)
-//                     j++;
-//                 else
-//                 {
-//                     printf("At the edge of map, try another direction.\n");
-//                     dir = 'z';
-//                 }
-//                 break;
-
-//             case 'e':
-//                 if (i + 1 < size_x)
-//                     i++;
-//                 else
-//                 {
-//                     printf("At the edge of map, try another direction.\n");
-//                     dir = 'z';
-//                 }
-//                 break;
-
-//             case 'w':
-//                 if (i - 1 >= 0)
-//                     i--;
-//                 else
-//                 {
-//                     printf("At the edge of map, try another direction.\n");
-//                     dir = 'z';
-//                 }
-//                 break;
-
-//             case 'q':
-//                 printf("Quitting...");
-//                 break;
-
-//             default:
-//                 printf("Invalid direction. Please try again.\n");
-//                 break;
-//             }
-//             fflush(stdin);
-//         } while (dir != 'n' && dir != 's' && dir != 'e' && dir != 'w' && dir != 'q');
-//     } while (dir != 'q');
-
-//     return 0;
-// }
+    return 0;
+}

@@ -1,0 +1,15 @@
+Author: Yin Hao Choong
+Completion Date: 2/14/2022
+Last Updated: 2/14/2022
+
+This is Project 1.03 - Path Finding. This assignment we focus on creating the weighted map for two types of trainer: "Rival" and "Hiker". Both current and future available trainers will always attempt to path to the PC (Playable Character). Currently I have implemented weighted maps for Rival and Hiker.
+
+Something that should be noted is that the current printing format is using Dr. Shaeffer's formatting, printf("%3d", distance % 100) if it is not INT_MAX and print double space if it is. This causes the output to seem off on certain map locations.
+
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.c, map.h, main.c, heap.c, heap.h
+
+map.c => the source code in c for the map.
+main.c => contains the main method which runs the program.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02
+Makefile => Contains make function that compiles both map.c and main.c, creating the executable file, and clean, which removes the file.

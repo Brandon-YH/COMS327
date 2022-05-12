@@ -60,7 +60,7 @@ typedef struct path {
 } path_t;
 
 typedef struct trainerInfo {
-  int pos[num_dims];
+  int pos[2];
   int pathCost[yN][xN];
   trainer_t trainer;
 } info_t;

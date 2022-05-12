@@ -1,0 +1,15 @@
+Author: Yin Hao Choong
+Completion Date: 2/8/2022
+Last Updated: 2/9/2022
+
+This is Project 1.02 - Moving from map to map. This assignment we focus on moving between maps using commands such as 'n', 's', 'e', 'w', 'f', 'q'. The first four characters (n, s, e, w) are direction of the move, 'f' represents fly that takes in two integers in (x,y) form, 'q' quits the game.
+
+It should be noted that the program will not reprint the map if it couldnt move to the location stated. Currently the program does not have any known bugs. Every possible while loop has been made to exit at some point. 
+
+
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.c, map.h, main.c
+
+map.c => the source code in c for the map.
+main.c => contains the main method which runs the program.
+Makefile => Contains make function that compiles both map.c and main.c, creating the executable file, and clean, which removes the file.

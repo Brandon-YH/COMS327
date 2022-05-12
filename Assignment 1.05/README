@@ -1,0 +1,26 @@
+Author: Yin Hao Choong
+Completion Date: 3/21/2022
+Last Updated: 3/21/2022
+
+This is Project 1.04 - User Interface. In this assignment we focus on creating the user interface with ncurses. Ncurses allows for a more pleasant experience while interacting with the game. The game will take in input from the user. Invalid input will just will allow the user another input.
+
+
+Below are the functional inputs allowed:
+7 or y: Attempt to move PC one cell to the upper left.
+8 or k: Attempt to move PC one cell up.
+9 or u: Attempt to move PC one cell to the upper right.
+6 or l: Attempt to move PC one cell to the right.
+3 or n: Attempt to move PC one cell to the lower right.
+2 or j: Attempt to move PC one cell down.
+1 or b: Attempt to move PC one cell to the lower left.
+4 or h: Attempt to move PC one cell to the left
+>     : Attempt to enter structures.
+<     : Attempt to exit structures.
+5 or space or .: Skips a player's turn.
+
+=======================================================================================
+This folder will contain a few files, which include: README, Makefile, map.c, heap.c, heap.h
+
+map.c => the source code in c for the map and main file.
+heap.c => Dr. Sheaffer's heap implementation from Assignment 1.02.
+Makefile => Contains make function that compiles map.c, creating the executable file, and clean, which removes the file.

@@ -1,0 +1,11 @@
+	Jan. 27: Started working on the assignment. Completed basic switch cases for printing map with size (x = 80, y = 21).
+
+	Jan. 28: Completed simple specification to each terrain type and attempted path/terrain generation.
+
+	Jan. 29: Removed terrain generation and focused on creating path, exits, PokeMart, PokeCenter.
+
+	Jan. 30: Completed exit, PokeMart and PokeCenter generation. Path generation still bugged and incomplete.
+	
+	Jan. 31: Continued fixing path generation, still incomplete. PokeMart and PokeCenter not connected to path.
+	
+	Fed. 1: Remade and completed path and terrain generation.

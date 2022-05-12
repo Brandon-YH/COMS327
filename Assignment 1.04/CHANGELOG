@@ -1,0 +1,13 @@
+	Feb. 25: Started working on the assignment. Had little to no idea where to start. Made minor progress with the assignment
+
+	Feb. 27: Gain slight progress with understanding the assignment due to the lack of time. Exams and assignments were clashing.
+
+	Feb. 28: Started working on movement of different trainers, including player random movement.
+
+	Mar. 1: Made more changes to my code to implement struct type for trainers, went to office hour to get help.
+	
+	Mar. 2: Began testing movement methods, most things still do not work. The only working movement is player.
+	
+	Mar. 3: More movement methods starts to work as more time spent debugging. Began looking into priority queue using heap.
+	
+	Mar. 4: Tinkered with test.c to understand heap, manage to finish everything. ASSIGNMENT COMPLETE.
